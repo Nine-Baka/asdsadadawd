@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Орбитальный Delta-V калькулятор (Гоман vs быстрый)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: linear-gradient(145deg, #0b0f1c 0%, #1a1f2f 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+        .calculator {
+            max-width: 680px;
+            width: 100%;
+            background: rgba(18, 25, 40, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            border-radius: 40px;
+            padding: 28px 24px;
+            box-shadow: 0 25px 40px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(64, 128, 255, 0.2) inset;
+            color: #eef4ff;
+            transition: all 0.2s;
+        }
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 500;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(100, 150, 255, 0.3);
+            padding-bottom: 18px;
+        }
+        h1 span {
+            background: #2d3f66;
+            padding: 6px 14px;
+            border-radius: 80px;
+            font-size: 1rem;
+            font-weight: 400;
+            color: #b7d0ff;
+            letter-spacing: 0.3px;
+        }
+        .sub {
+            color: #9bb4e0;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .sub div {
+            background: rgba(20, 30, 50, 0.7);
+            border-radius: 30px;
+            padding: 6px 16px;
+            border: 1px solid #2f4160;
+        }
+        .param-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        .param-card {
+            background: rgba(8, 14, 26, 0.7);
+            border-radius: 28px;
+            padding: 20px 24px;
+            border: 1px solid #25344f;
+            box-shadow: 0 6px 0 #0b101e;
+        }
+        .param-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            color: #9bc0ff;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+        .param-title i {
+            font-size: 1.3rem;
+            font-style: normal;
+            filter: drop-shadow(0 0 5px #3f6ac0);
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .input-row label {
+            font-size: 1.05rem;
+            font-weight: 400;
+            color: #ccdcff;
+            min-width: 160px;
+        }
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            background: #010a18;
+            border-radius: 60px;
+            border: 1px solid #2f4870;
+            padding: 4px 4px 4px 18px;
+            flex: 1 1 240px;
+            box-shadow: inset 0 2px 5px #00000055;
+        }
+        .input-wrapper input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 500;
+            width: 130px;
+            text-align: right;
+            outline: none;
+            padding: 10px 0;
+        }
+        .input-wrapper input:focus {
+            text-shadow: 0 0 6px #5f8aff;
+        }
+        .input-wrapper span {
+            font-size: 1rem;
+            color: #8da9e0;
+            margin-left: 8px;
+            margin-right: 14px;
+            font-weight: 500;
+        }
+        .unit-badge {
+            background: #1d3152;
+            border-radius: 30px;
+            padding: 6px 14px;
+            font-size: 0.9rem;
+            color: #b5d0ff;
+        }
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 12px 0 8px;
+            background: #111d32;
+            border-radius: 50px;
+            padding: 12px 20px;
+        }
+        .checkbox-row input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            accent-color: #3e7aff;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .checkbox-row label {
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: #d6e4ff;
+        }
+        .hint {
+            font-size: 0.9rem;
+            color: #8aa1cc;
+            margin-left: 38px;
+            margin-top: -6px;
+        }
+        .action-button {
+            background: linear-gradient(135deg, #224488, #103070);
+            border: none;
+            border-radius: 60px;
+            padding: 18px 28px;
+            width: 100%;
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: white;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 8px 0 #0a1a38, 0 10px 20px #00000080;
+            transition: 0.07s linear;
+            margin: 24px 0 28px;
+            border: 1px solid #5380dd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+        .action-button:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #0a1a38, 0 5px 12px #000000b0;
+        }
+        .result-panel {
+            background: #0e1a2b;
+            border-radius: 32px;
+            padding: 24px;
+            border: 1px solid #3b5790;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 12px 10px;
+            border-bottom: 1px dashed #2f4468;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .result-label {
+            font-size: 1.2rem;
+            color: #adc6ff;
+        }
+        .result-value {
+            font-size: 2rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #d9ecff, #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+        .result-value small {
+            font-size: 1rem;
+            font-weight: 400;
+            background: none;
+            -webkit-text-fill-color: #8aa5d5;
+            color: #8aa5d5;
+        }
+        .dv-detail {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1rem;
+            color: #b2c8f0;
+            padding: 8px 10px 2px;
+        }
+        .footnote {
+            margin-top: 18px;
+            color: #6f88b0;
+            font-size: 0.9rem;
+            text-align: center;
+            border-top: 1px solid #253c5c;
+            padding-top: 16px;
+        }
+        .error-message {
+            background: #4d1f2f;
+            border-left: 6px solid #ff6680;
+            border-radius: 24px;
+            padding: 14px 22px;
+            color: #ffb6c1;
+            margin: 10px 0;
+            font-weight: 400;
+        }
+        .info-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #33599e;
+            color: white;
+            text-align: center;
+            line-height: 20px;
+            font-size: 14px;
+            margin-left: 6px;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h1>
+            🚀 Delta-V калькулятор
+            <span>орбитальный</span>
+        </h1>
+        <div class="sub">
+            <div>⚡ Гомановский переход</div>
+            <div>🔄 Быстрый (одноимпульсный)</div>
+        </div>
+
+        <!-- ГРАВИТАЦИОННЫЙ ПАРАМЕТР -->
+        <div class="param-card">
+            <div class="param-title">
+                <i>🪐</i> ГРАВИТАЦИОННЫЙ ПАРАМЕТР (μ)
+            </div>
+            <div class="input-row">
+                <label>Центральное тело <span class="info-icon" title="Стандартные значения: Земля 398600, Луна 4904, Марс 42828">?</span></label>
+                <div class="input-wrapper">
+                    <input type="number" id="mu" value="398600" step="1" min="1">
+                    <span>км³/с²</span>
+                </div>
+            </div>
+            <div style="display:flex; gap:12px; justify-content:flex-end; flex-wrap:wrap;">
+                <button class="unit-badge" data-mu="398600">🌍 Земля</button>
+                <button class="unit-badge" data-mu="4904">🌕 Луна</button>
+                <button class="unit-badge" data-mu="42828">🔴 Марс</button>
+            </div>
+        </div>
+
+        <!-- ИСХОДНАЯ ОРБИТА -->
+        <div class="param-card">
+            <div class="param-title">
+                <i>📡</i> ИСХОДНАЯ КРУГОВАЯ ОРБИТА
+            </div>
+            <div class="input-row">
+                <label>Радиус (от центра) <i>r₁</i></label>
+                <div class="input-wrapper">
+                    <input type="number" id="r1" value="6871" step="10" min="100">
+                    <span>км</span>
+                </div>
+            </div>
+            <div class="input-row" style="margin-bottom:0;">
+                <label>Высота над поверхностью</label>
+                <div class="input-wrapper">
+                    <input type="number" id="h1" value="500" step="10" min="0" placeholder="----">
+                    <span>км</span>
+                </div>
+            </div>
+            <div class="hint">🚨 Если указана высота, радиус пересчитывается (при μ Земли Rз=6371км)</div>
+        </div>
+
+        <!-- ЦЕЛЕВАЯ ОРБИТА -->
+        <div class="param-card">
+            <div class="param-title">
+                <i>🎯</i> ЦЕЛЕВАЯ КРУГОВАЯ ОРБИТА
+            </div>
+            <div class="input-row">
+                <label>Радиус (от центра) <i>r₂</i></label>
+                <div class="input-wrapper">
+                    <input type="number" id="r2" value="42164" step="10" min="100">
+                    <span>км</span>
+                </div>
+            </div>
+            <div class="input-row" style="margin-bottom:0;">
+                <label>Высота над поверхностью</label>
+                <div class="input-wrapper">
+                    <input type="number" id="h2" value="35793" step="10" min="0" placeholder="----">
+                    <span>км</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- РЕЖИМ -->
+        <div class="checkbox-row">
+            <input type="checkbox" id="fastMode">
+            <label>⚡ Быстрый режим (одноимпульсный перелёт) — только если r₂ > r₁</label>
+        </div>
+        <div class="hint" style="margin-top:0;">При быстром режиме второй импульс отсутствует, аппарат переходит на эллипс с апогеем r₂</div>
+
+        <!-- КНОПКА -->
+        <button class="action-button" id="calcBtn">
+            <span>🚀</span> РАССЧИТАТЬ Delta-V <span>🛰️</span>
+        </button>
+
+        <!-- РЕЗУЛЬТАТ -->
+        <div class="result-panel" id="resultPanel">
+            <div class="result-item">
+                <span class="result-label">Характеристическая скорость ΔV</span>
+                <span class="result-value" id="dvTotal">0.00 <small>км/с</small></span>
+            </div>
+            <div class="dv-detail" id="dvDetail1">Первый импульс: —</div>
+            <div class="dv-detail" id="dvDetail2">Второй импульс: —</div>
+            <div class="dv-detail" id="dvNote" style="color: #aaccff;"></div>
+        </div>
+
+        <div class="footnote">
+            ⚙️ Для круговых орбит. Гоман: два импульса. Быстрый: разгон до эллиптической траектории с апогеем = r₂.
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // Константы: радиус Земли для удобной высоты (по умолчанию)
+            const R_EARTH = 6371; // км
+
+            // Элементы ввода
+            const muInput = document.getElementById('mu');
+            const r1Input = document.getElementById('r1');
+            const h1Input = document.getElementById('h1');
+            const r2Input = document.getElementById('r2');
+            const h2Input = document.getElementById('h2');
+            const fastModeCheck = document.getElementById('fastMode');
+            const calcBtn = document.getElementById('calcBtn');
+
+            // Элементы вывода
+            const dvTotalSpan = document.getElementById('dvTotal');
+            const dvDetail1 = document.getElementById('dvDetail1');
+            const dvDetail2 = document.getElementById('dvDetail2');
+            const dvNote = document.getElementById('dvNote');
+
+            // Кнопки предустановок mu
+            document.querySelectorAll('.unit-badge').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    const newMu = parseFloat(this.dataset.mu);
+                    if (!isNaN(newMu)) {
+                        muInput.value = newMu;
+                        // Если это Земля и поля высот пустоваты — можно подсказать, но не трогаем
+                    }
+                });
+            });
+
+            // Функция синхронизации радиусов и высот (взаимодействие)
+            function syncRadiusFromHeight(heightInput, radiusInput, isPrimary = true) {
+                const h = parseFloat(heightInput.value);
+                if (!isNaN(h) && h >= 0) {
+                    // Пересчитываем радиус: полагаем μ соответствует Земле? Или можно использовать фикс.радиус.
+                    // Но если mu не Земля, радиус планеты может быть другим. 
+                    // Для простоты используем R_EARTH (можно было бы ввести отдельное поле, но усложнит).
+                    // Сделаем пометку: если mu примерно не Земля, предупреждать.
+                    const mu = parseFloat(muInput.value) || 398600;
+                    let planetRadius = R_EARTH;
+                    if (mu > 400000 && mu < 400000) {} // просто заглушка. 
+                    // Добавим простое приближение: для Луны 1737, для Марса 3390
+                    if (Math.abs(mu - 4904) < 100) planetRadius = 1737;
+                    else if (Math.abs(mu - 42828) < 1000) planetRadius = 3390;
+                    // иначе оставляем 6371 (Земля).
+                    
+                    const r = h + planetRadius;
+                    radiusInput.value = Math.round(r);
+                }
+            }
+
+            function syncHeightFromRadius(radiusInput, heightInput) {
+                const r = parseFloat(radiusInput.value);
+                if (!isNaN(r) && r > 0) {
+                    let planetRadius = R_EARTH;
+                    const mu = parseFloat(muInput.value) || 398600;
+                    if (Math.abs(mu - 4904) < 100) planetRadius = 1737;
+                    else if (Math.abs(mu - 42828) < 1000) planetRadius = 3390;
+                    
+                    const h = r - planetRadius;
+                    if (h >= 0) {
+                        heightInput.value = Math.round(h);
+                    } else {
+                        heightInput.value = 0;
+                    }
+                }
+            }
+
+            // Слушатели для автосинхронизации
+            h1Input.addEventListener('input', function() {
+                syncRadiusFromHeight(h1Input, r1Input);
+            });
+            h2Input.addEventListener('input', function() {
+                syncRadiusFromHeight(h2Input, r2Input);
+            });
+            r1Input.addEventListener('input', function() {
+                syncHeightFromRadius(r1Input, h1Input);
+            });
+            r2Input.addEventListener('input', function() {
+                syncHeightFromRadius(r2Input, h2Input);
+            });
+            // при изменении mu можно обновить высоты (опционально принудительно)
+            muInput.addEventListener('change', function() {
+                // пересчитать высоты для текущих радиусов (чтобы избежать отрицательных)
+                syncHeightFromRadius(r1Input, h1Input);
+                syncHeightFromRadius(r2Input, h2Input);
+            });
+
+            // Валидация и вычисление
+            function computeDeltaV() {
+                // Чтение параметров
+                let mu = parseFloat(muInput.value);
+                let r1 = parseFloat(r1Input.value);
+                let r2 = parseFloat(r2Input.value);
+                const fastMode = fastModeCheck.checked;
+
+                // Проверки
+                if (isNaN(mu) || mu <= 0) { mu = 398600; muInput.value = 398600; }
+                if (isNaN(r1) || r1 <= 0) { r1 = 6871; r1Input.value = 6871; }
+                if (isNaN(r2) || r2 <= 0) { r2 = 42164; r2Input.value = 42164; }
+
+                // корректировка высот
+                syncHeightFromRadius(r1Input, h1Input);
+                syncHeightFromRadius(r2Input, h2Input);
+                // повторно считать значения (после синхронизации)
+                r1 = parseFloat(r1Input.value);
+                r2 = parseFloat(r2Input.value);
+
+                // начальные значения
+                dvDetail1.innerText = 'Первый импульс: —';
+                dvDetail2.innerText = 'Второй импульс: —';
+                dvNote.innerText = '';
+
+                // проверка: r1 и r2 не равны нулю
+                if (r1 <= 0 || r2 <= 0 || mu <= 0) {
+                    dvTotalSpan.innerHTML = '<span style="font-size:1rem; color:#ffa29c;">Ошибка ввода</span>';
+                    dvDetail1.innerText = 'Первый импульс: некорректные радиусы';
+                    return;
+                }
+
+                // Если исходная и целевая совпадают
+                if (Math.abs(r1 - r2) < 1) {
+                    dvTotalSpan.innerText = '0.00';
+                    dvDetail1.innerText = 'Первый импульс: 0.00 км/с (орбиты совпадают)';
+                    dvDetail2.innerText = 'Второй импульс: 0.00 км/с';
+                    return;
+                }
+
+                // Скорости на круговых орбитах
+                const v1 = Math.sqrt(mu / r1);
+                const v2 = Math.sqrt(mu / r2);
+
+                let dv1, dv2, dvTotal;
+
+                if (fastMode && r2 > r1) {
+                    // Быстрый одноимпульсный перелёт: переход на эллипс с апогеем = r2, перигеем = r1
+                    // большая полуось a_trans = (r1 + r2) / 2
+                    const aTrans = (r1 + r2) / 2;
+                    // скорость в перигее эллипса
+                    const vPeri = Math.sqrt(2 * mu * (1/r1 - 1/(2*aTrans)));
+                    dv1 = vPeri - v1;   // первый импульс (разгон)
+                    dv2 = 0;             // второго импульса нет, выходим на эллипс
+                    dvTotal = dv1;
+
+                    dvDetail1.innerText = `Первый импульс (разгон до эллипса): ${dv1.toFixed(3)} км/с`;
+                    dvDetail2.innerText = `Второй импульс: 0 (выход на эллиптическую)`;
+                    dvNote.innerText = `⚠️ Конечная орбита — эллипс с апогеем ${r2.toFixed(0)} км. Для круговой нужен второй импульс.`;
+                } else {
+                    // Гомановский переход (два импульса)
+                    if (r1 === r2) {
+                        dvTotal = 0;
+                        dv1 = 0; dv2 = 0;
+                    } else {
+                        const aTrans = (r1 + r2) / 2;
+                        // Скорость в перицентре переходного эллипса
+                        const vPeri = Math.sqrt(2 * mu * (1/r1 - 1/(2*aTrans)));
+                        // Скорость в апоцентре переходного эллипса
+                        const vApo = Math.sqrt(2 * mu * (1/r2 - 1/(2*aTrans)));
+
+                        dv1 = vPeri - v1;
+                        dv2 = v2 - vApo;   // второй импульс для циркуляризации
+
+                        // Если r2 < r1 (переход на нижнюю орбиту) — dv2 будет отрицательным? но по формуле корректен.
+                        // Для красоты покажем абсолютные значения, так как это величина импульса (замедление).
+                        // В классике торможение тоже считается положительным.
+                        dvTotal = Math.abs(dv1) + Math.abs(dv2); // сумма модулей (характеристическая скорость)
+                    }
+
+                    dvDetail1.innerText = `Первый импульс (перевод на эллипс): ${dv1.toFixed(3)} км/с`;
+                    dvDetail2.innerText = `Второй импульс (циркуляризация): ${dv2.toFixed(3)} км/с`;
+                    dvNote.innerText = (r2 > r1) ? '🔼 Переход на верхнюю орбиту' : '🔽 Переход на нижнюю орбиту';
+                }
+
+                dvTotalSpan.innerHTML = `${dvTotal.toFixed(3)} <small>км/с</small>`;
+
+                // Если быстро и r2 < r1 — нельзя
+                if (fastMode && r2 <= r1) {
+                    dvTotalSpan.innerHTML = `<span style="font-size:1rem; color: #ffa28c;">Быстрый режим требует r₂ > r₁</span>`;
+                    dvDetail1.innerText = 'Первый импульс: неприменимо';
+                    dvDetail2.innerText = '';
+                    dvNote.innerText = 'Переключитесь на Гомановский переход или увеличьте r₂';
+                }
+            }
+
+            // Обработчик кнопки
+            calcBtn.addEventListener('click', computeDeltaV);
+
+            // Вычислить при загрузке
+            window.addEventListener('load', function() {
+                // Начальная синхронизация (чтобы высоты соответствовали радиусам с учетом радиуса планеты)
+                syncHeightFromRadius(r1Input, h1Input);
+                syncHeightFromRadius(r2Input, h2Input);
+                computeDeltaV();
+            });
+
+            // Дополнительный запуск при изменении checkbox
+            fastModeCheck.addEventListener('change', computeDeltaV);
+        })();
+    </script>
+</body>
+</html>
